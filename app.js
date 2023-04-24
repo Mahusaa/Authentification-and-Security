@@ -1,10 +1,12 @@
 //jshint esversion:6
-
+// Requires modules
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const {MongoClient} = require("mongodb");
 const mongoose = require("mongoose");
+const encrypt = require("mongoose-encryption");
+
 
 const app = express();
 
@@ -19,6 +21,10 @@ const userSchema = new mongoose.Schema({
     email: String,
     password: String,
   });
+
+// Create encryption schema
+const secret = "this is secret my bro";
+userSchema.plugin(encrypt, { secret: secret, encryptedFields: ["password"] });
 
 // Mongoose model based on userSchema
 const user = new mongoose.model("user", userSchema);
@@ -85,13 +91,7 @@ app.post("/login",async function(req,res){
     }
 });
 
-
-
-
-
-
-
-
+// Listen Port
 app.listen(3000, function(){
     console.log("Server started on port 3000")
 })
