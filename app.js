@@ -4,12 +4,10 @@ require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
-const {MongoClient} = require("mongodb");
 const mongoose = require("mongoose");
-
-// Bcrypt const
-const bcrypt = require('bcrypt');
-const saltRounds = 10;
+const session = require("express-session");
+const passport = require("passport");
+const passportLocalMongoose = require("passport-local-mongoose");
 
 const app = express();
 
@@ -17,29 +15,21 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public")); 
 
+// Session
+app.use(session({
+    secret: "this my little secret",
+    resave: false,
+    saveUninitialized: false,
+}));
+
+// Pasport initilazed and session
+app.use(passport.initialize());
+app.use(passport.session());
+
+// MongoDB atlas URI
 const dbUsername = process.env.DB_USERNAME
 const dbPassword = process.env.DB_PASSWORD
 const uri = `mongodb+srv://${dbUsername}:${dbPassword}@cluster0.kg9dwcn.mongodb.net/myAuthentification`
-
-// User schema
-const userSchema = new mongoose.Schema({
-    email: String,
-    password: String,
-  });
-
-// Mongoose model based on userSchema
-const user = new mongoose.model("user", userSchema);
-
-// Getting home, login and register page
-app.get("/",function(req,res){
-    res.render("home");
-});
-app.get("/register",function(req,res){
-    res.render("register");
-});
-app.get("/login",function(req,res){
-    res.render("login");
-});
 
 // Connect to Database mongoDB atlas using mongoose.connect
 mongoose.connect(uri, {
@@ -53,44 +43,43 @@ mongoose.connect(uri, {
     console.error('Error connecting to MongoDB:', err);
   });
 
+// User schema
+const userSchema = new mongoose.Schema({
+    email: String,
+    password: String,
+  });
+// Pasport Local mongoose
+userSchema.plugin(passportLocalMongoose);
+
+// Mongoose model based on userSchema
+const user = new mongoose.model("user", userSchema);
+
+passport.use(user.createStrategy());
+passport.serializeUser(user.serializeUser());
+passport.deserializeUser(user.deserializeUser());
+
+
+// Getting home, login and register page
+app.get("/",function(req,res){
+    res.render("home");
+});
+app.get("/register",function(req,res){
+    res.render("register");
+});
+app.get("/login",function(req,res){
+    res.render("login");
+});
+
+
+
 // Register page
 app.post("/register", async function(req,res){
-    try {
-        const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
-        const newUser = new user ({
-            email: req.body.username,
-            password: hashedPassword,
-        });
-        await newUser.save();
-        res.render("secrets")
-        console.log("Succesfully add newUser");
-    } catch (err) {
-        console.log("Failed to create newUser")
-    }
+
 });
 
 // Login page
 app.post("/login",async function(req,res){
-    const login = {
-        email: req.body.username,
-        password: req.body.password,
-    };
-    try {
-        const foundUser = await user.findOne({email: login.email})
-        if (foundUser) {
-            const comparedPassword = await bcrypt.compare(login.password, foundUser.password);
-            if (comparedPassword == true) {
-                res.render("secrets");
-                console.log("Password matches")
-            } else {
-                console.log("Password doesnt matches")
-            }
-        } else {
-            console.log("user not found")
-        }
-    } catch (err) {
-        console.log("error occured",err)
-    }
+
 });
 
 // Listen Port
