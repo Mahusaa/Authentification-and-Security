@@ -14,7 +14,9 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public")); 
 
-const uri = "mongodb+srv://usamah_kk:1KN8pkiP9gAgE3b4@cluster0.kg9dwcn.mongodb.net/myAuthentification"
+const dbUsername = process.env.DB_USERNAME
+const dbPassword = process.env.DB_PASSWORD
+const uri = `mongodb+srv://${dbUsername}:${dbPassword}@cluster0.kg9dwcn.mongodb.net/myAuthentification`
 
 // User schema
 const userSchema = new mongoose.Schema({
