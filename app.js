@@ -6,8 +6,10 @@ const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const {MongoClient} = require("mongodb");
 const mongoose = require("mongoose");
-const encrypt = require("mongoose-encryption");
-const md5 = require('md5');
+
+// Bcrypt const
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 const app = express();
 
@@ -53,11 +55,11 @@ mongoose.connect(uri, {
 
 // Register page
 app.post("/register", async function(req,res){
-
     try {
+        const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
         const newUser = new user ({
             email: req.body.username,
-            password: md5(req.body.password),
+            password: hashedPassword,
         });
         await newUser.save();
         res.render("secrets")
@@ -71,12 +73,13 @@ app.post("/register", async function(req,res){
 app.post("/login",async function(req,res){
     const login = {
         email: req.body.username,
-        password: md5(req.body.password),
+        password: req.body.password,
     };
     try {
         const foundUser = await user.findOne({email: login.email})
         if (foundUser) {
-            if (foundUser.password === login.password) {
+            const comparedPassword = await bcrypt.compare(login.password, foundUser.password);
+            if (comparedPassword == true) {
                 res.render("secrets");
                 console.log("Password matches")
             } else {
