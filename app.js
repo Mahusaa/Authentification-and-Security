@@ -52,11 +52,11 @@ const userSchema = new mongoose.Schema({
 userSchema.plugin(passportLocalMongoose);
 
 // Mongoose model based on userSchema
-const user = new mongoose.model("user", userSchema);
+const User = new mongoose.model("User", userSchema);
 
-passport.use(user.createStrategy());
-passport.serializeUser(user.serializeUser());
-passport.deserializeUser(user.deserializeUser());
+passport.use(User.createStrategy());
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 
 
 // Getting home, login and register page
@@ -69,17 +69,56 @@ app.get("/register",function(req,res){
 app.get("/login",function(req,res){
     res.render("login");
 });
-
-
+app.get("/secrets",function(req,res){
+    if (req.isAuthenticated()) {
+        res.render("secrets");
+    } else {
+        res.redirect("/login");
+    }
+});
+app.get("/logout", function(req,res){
+    req.logout(function(err){
+        if (err) {
+            console.log("An error occurred during logout:", err);
+        } else {
+            res.redirect("/")
+        }
+    });
+});
 
 // Register page
 app.post("/register", async function(req,res){
-
+    try {
+        await User.register({username: req.body.username}, req.body.password);
+        await passport.authenticate("local")(req,res,function(){
+            // Redirect to /secrets after successful registration and authentication
+            res.redirect("/secrets")
+        });
+    } catch (err) {
+        console.log("somthing went wrong when trying to register", err);
+        res.redirect("/register")
+    }
 });
 
 // Login page
 app.post("/login",async function(req,res){
-
+    const user = new User({
+        username: req.body.username,
+        password: req.body.password,
+    });
+    try {
+        req.login(user, function(err){
+            if (err) {
+                console.log("An error occurred during login:", err);
+            } else {
+                passport.authenticate("local")(req, res, function() {
+                    res.redirect("/secrets");
+                  });
+            }
+        });
+      } catch (error) {
+        console.log("An error occurred during login:", error);
+      }
 });
 
 // Listen Port
