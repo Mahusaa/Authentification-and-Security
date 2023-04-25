@@ -65,6 +65,7 @@ const userSchema = new mongoose.Schema({
     email: String,
     password: String,
     googleId: String,
+    secret: String,
   });
 
 // Pasport Local mongoose
@@ -107,11 +108,37 @@ app.get("/register",function(req,res){
 app.get("/login",function(req,res){
     res.render("login");
 });
-app.get("/secrets",function(req,res){
+app.get("/secrets",async function(req,res){
+    try {
+        const foundUser = await User.find({"secret": {$ne: null}});
+        if (foundUser) {
+            res.render("secrets", {userWithSecrets: foundUser})
+        }
+    } catch (err) {
+        console.log("something when wrong trying to find secret", err);
+    }
+});
+app.get("/submit", function(req,res){
     if (req.isAuthenticated()) {
-        res.render("secrets");
+        res.render("submit");
     } else {
         res.redirect("/login");
+    }
+});
+app.post("/submit", async function(req,res){
+    const submittedSecret = req.body.secret;
+    try {
+    console.log(req.user.id);
+    const foundUser = await User.findOne({_id: req.user.id});
+    if (foundUser) {
+        foundUser.secret = submittedSecret;
+        await foundUser.save();
+        res.redirect("/secrets")
+    } else {
+        console.log("cant find user")
+    }
+    } catch (err) {
+        console.log("unknown error in submit secret",err);
     }
 });
 app.get("/logout", function(req,res){
