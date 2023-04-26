@@ -40,15 +40,18 @@ My Authentication App is a web application that provides user authentication usi
 2. Navigate to the project directory:
 3. Install the dependencies:
 4. Create a `.env` file in the project directory and add the following environment variables:
+```sh
 - CLIENT_ID=<your-google-client-id>
 - CLIENT_SECRET=<your-google-client-secret>
 - DB_USERNAME=<your-mongodb-atlas-username>
 - DB_PASSWORD=<your-mongodb-atlas-password>
-
+```
 5. Start the application:
 
-- node app.js
-- nodemon app.js
+```
+node app.js
+```
+
 
 6. Open a web browser and go to `http://localhost:3000` to access the application.
 
